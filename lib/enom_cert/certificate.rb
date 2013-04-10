@@ -1,5 +1,4 @@
 module EnomCert
-  
   class Certificate
     # include HTTParty
     
