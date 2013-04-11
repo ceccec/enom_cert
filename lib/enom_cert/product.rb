@@ -1,8 +1,10 @@
-module EnomCert
+module Enom::Cert
   class Product
     # include HTTParty
   
-    attr_reader :prod_type, :prod_code, :prod_desc, :retail_price, :reseller_price, :enabled, :years
+    attr_reader :prod_type, :prod_code, :prod_desc, :retail_price, :reseller_price, :enabled, :years, :attributes
+    alias_method :id, :prod_code
+    alias_method :service, :prod_code
 
     def initialize(attributes)
       @prod_type = attributes["ProdType"]
@@ -12,10 +14,11 @@ module EnomCert
       @reseller_price = attributes["ResellerPrice"]
       @enabled = attributes["Enabled"]
       @years = attributes["Years"]
+      # @attributes = attributes
     end
   
     def self.all(options = {})
-      response = Client.request("Command" => "GetCerts")["interface_response"]["GetCerts"]["Certs"]
+      response = Enom::Client.request("Command" => "GetCerts")["interface_response"]["GetCerts"]["Certs"]
       response.map {|k,v| self.new(v) }
     end
   

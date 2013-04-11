@@ -1,4 +1,4 @@
-module EnomCert
+module Enom::Cert
   class Certificate
     # include HTTParty
     
@@ -13,15 +13,15 @@ module EnomCert
       @cert_id = attributes["CertID"]
       @domain = attributes["DomainName"]
       @validity_period = attributes["ValidityPeriod"]
-      @order_date = attributes["OrderDate"]
-      @config_date = attributes["ConfigDate"]
+      @order_date = Date.strptime(attributes["OrderDate"].split(" ").first, "%m/%d/%Y") unless attributes["OrderDate"].blank?
+      @config_date = Date.strptime(attributes["ConfigDate"].split(" ").first, "%m/%d/%Y") unless attributes["ConfigDate"].blank?
+      @expiration_date = Date.strptime(attributes["ExpirationDate"].split(" ").first, "%m/%d/%Y") unless attributes["ExpirationDate"].blank?
       @renewal_indicator = attributes["RenewalIndicator"]
       @web_server_type_id = attributes["WebServerTypeID"]
       @web_server_type_name = attributes["WebServerTypeName"]
       @web_server_type_code = attributes["WebServerTypeCode"]
       @order_id = attributes["OrderID"]
       @order_detail_id = attributes["OrderDetailID"]
-      @expiration_date = attributes["ExpirationDate"]
       @approver_email = attributes["ApproverEmail"]
       @message = attributes["Message"]
       @cert_status_id = attributes["CertStatusID"]
@@ -51,12 +51,20 @@ module EnomCert
     end
     
     def self.all(options = {})
-      response = Client.request("Command" => "CertGetCerts")["interface_response"]["CertGetCerts"]["Certs"]["Cert"]
-      response.map{|r|Certificate.new(r)}
+      response = Enom::Client.request(options.merge!("Command" => "CertGetCerts"))["interface_response"]["CertGetCerts"]["Certs"]["Cert"]
+      response.map{|r|self.new(r)}
     end
     
     def self.order!(options = {})
-      response = Client.request("Command" => "PurchaseServices", "Service" => options[:prod_code], "NumYears" => options[:years])["interface_response"]
+      options.merge!("Command" => "PurchaseServices", "Service" => options["prod_code"], "NumYears" => options["num_years"])
+      response = Enom::Client.request(options)["interface_response"]
+      self.new(response)
+    end
+    
+    def self.find(options = {})
+      options.merge!("Command" => "CertGetCertDetail", "CertID" => options["id"]||options["certid"], "NumYears" => options["num_years"])
+      response = Enom::Client.request(options)["interface_response"]["CertGetCertDetail"]
+      self.new(response)
     end
     
     def parse_csr
